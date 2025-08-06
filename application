@@ -1,0 +1,143 @@
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const app = express();
+const port = 5000;
+
+const applicationRoutes = require('./routes/applications');
+
+app.use(cors());
+app.use(express.json());
+app.use('/api/applications', applicationRoutes);
+
+mongoose.connect('mongodb://localhost:27017/interns', {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+}).then(() => console.log('MongoDB connected'))
+  .catch((err) => console.log(err));
+
+app.listen(port, () => console.log(`Server running on port ${port}`));
+
+const mongoose = require('mongoose');
+
+const ApplicationSchema = new mongoose.Schema({
+  name: String,
+  email: String,
+  role: String,
+  message: String,
+});
+
+module.exports = mongoose.model('Application', ApplicationSchema);
+
+const express = require('express');
+const router = express.Router();
+const Application = require('../models/Application');
+
+router.post('/', async (req, res) => {
+  const application = new Application(req.body);
+  await application.save();
+  res.status(201).send(application);
+});
+
+router.get('/', async (req, res) => {
+  const applications = await Application.find();
+  res.send(applications);
+});
+
+module.exports = router;
+
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import Home from './Home';
+import Register from './Register';
+import Admin from './Admin';
+
+function App() {
+  return (
+    <Router>
+      <nav>
+        <Link to="/">Home</Link> | <Link to="/register">Register</Link> | <Link to="/admin">Admin</Link>
+      </nav>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/admin" element={<Admin />} />
+      </Routes>
+    </Router>
+  );
+}
+
+export default App;
+
+import React from 'react';
+
+function Home() {
+  return <h1>Welcome to the Intern/Volunteer Portal</h1>;
+}
+
+export default Home;
+
+import React, { useState } from 'react';
+import axios from 'axios';
+
+function Register() {
+  const [form, setForm] = useState({ name: '', email: '', role: '', message: '' });
+
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    await axios.post('http://localhost:5000/api/applications', form);
+    alert('Application submitted!');
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input name="name" placeholder="Name" onChange={handleChange} required />
+      <input name="email" placeholder="Email" onChange={handleChange} required />
+      <input name="role" placeholder="Intern or Volunteer" onChange={handleChange} required />
+      <textarea name="message" placeholder="Why you want to join?" onChange={handleChange} />
+      <button type="submit">Submit</button>
+    </form>
+  );
+}
+
+export default Register;
+
+
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+
+function Admin() {
+  const [applications, setApplications] = useState([]);
+
+  useEffect(() => {
+    axios.get('http://localhost:5000/api/applications')
+      .then(res => setApplications(res.data));
+  }, []);
+
+  return (
+    <div>
+      <h2>All Applications</h2>
+      <ul>
+        {applications.map((app, idx) => (
+          <li key={idx}>
+            <b>{app.name}</b> ({app.role}) - {app.email}<br />
+            <i>{app.message}</i>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+export default Admin;
